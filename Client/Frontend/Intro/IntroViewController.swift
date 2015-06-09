@@ -64,11 +64,12 @@ class IntroViewController: UIViewController, UIScrollViewDelegate {
     var startBrowsingButton: UIButton!
     var introView: UIView?
     var slideContainer: UIView!
-    var scrollView: UIScrollView!
     var pageControl: UIPageControl!
     var backButton: UIButton!
     var forwardButton: UIButton!
     var signInButton: UIButton!
+
+    private var scrollView: IntroOverlayScrollView!
 
     var slideVerticalScaleFactor: CGFloat = 1.0
 
@@ -101,7 +102,7 @@ class IntroViewController: UIViewController, UIScrollViewDelegate {
             make.height.equalTo(IntroViewControllerUX.StartBrowsingButtonHeight)
         }
 
-        scrollView = UIScrollView()
+        scrollView = IntroOverlayScrollView()
         scrollView.backgroundColor = UIColor.clearColor()
         scrollView.delegate = self
         scrollView.bounces = false
@@ -198,7 +199,7 @@ class IntroViewController: UIViewController, UIScrollViewDelegate {
         // Make whoe screen scrollable
         view.bringSubviewToFront(scrollView)
         // Activate the first card
-        setActiveIntroView(introViews[0])
+        setActiveIntroView(introViews[0], forPage: 0)
     }
 
     override func viewDidLayoutSubviews() {
@@ -239,11 +240,11 @@ class IntroViewController: UIViewController, UIScrollViewDelegate {
 
     func SELback() {
         if introView == introViews[1] {
-            setActiveIntroView(introViews[0])
+            setActiveIntroView(introViews[0], forPage: 0)
             scrollView.scrollRectToVisible(scrollView.subviews[0].frame, animated: true)
             pageControl.currentPage = 0
         } else if introView == introViews[2] {
-            setActiveIntroView(introViews[1])
+            setActiveIntroView(introViews[1], forPage: 1)
             scrollView.scrollRectToVisible(scrollView.subviews[1].frame, animated: true)
             pageControl.currentPage = 1
         }
@@ -251,11 +252,11 @@ class IntroViewController: UIViewController, UIScrollViewDelegate {
 
     func SELforward() {
         if introView == introViews[0] {
-            setActiveIntroView(introViews[1])
+            setActiveIntroView(introViews[1], forPage: 1)
             scrollView.scrollRectToVisible(scrollView.subviews[1].frame, animated: true)
             pageControl.currentPage = 1
         } else if introView == introViews[1] {
-            setActiveIntroView(introViews[2])
+            setActiveIntroView(introViews[2], forPage: 2)
             scrollView.scrollRectToVisible(scrollView.subviews[2].frame, animated: true)
             pageControl.currentPage = 2
         }
@@ -268,7 +269,7 @@ class IntroViewController: UIViewController, UIScrollViewDelegate {
     func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
         let page = Int(scrollView.contentOffset.x / scrollView.frame.size.width)
         pageControl.currentPage = page
-        setActiveIntroView(introViews[page])
+        setActiveIntroView(introViews[page], forPage: page)
     }
 
     func scrollViewDidScroll(scrollView: UIScrollView) {
@@ -300,12 +301,18 @@ class IntroViewController: UIViewController, UIScrollViewDelegate {
         return UIColor(red: newRed, green: newGreen, blue: newBlue, alpha: 1.0)
     }
 
-    private func setActiveIntroView(newIntroView: UIView) {
+    private func setActiveIntroView(newIntroView: UIView, forPage page: Int) {
         if introView != newIntroView {
             UIView.animateWithDuration(IntroViewControllerUX.FadeDuration, animations: { () -> Void in
                 self.introView?.alpha = 0
                 self.introView = newIntroView
                 newIntroView.alpha = 1.0
+            }, completion: { _ in
+                if page == 2 {
+                    self.scrollView.signinButton = self.signInButton
+                } else {
+                    self.scrollView.signinButton = nil
+                }
             })
         }
     }
@@ -364,6 +371,19 @@ class IntroViewController: UIViewController, UIScrollViewDelegate {
             }
         }
 
+    }
+}
+
+private class IntroOverlayScrollView: UIScrollView {
+    weak var signinButton: UIButton?
+
+    private override func pointInside(point: CGPoint, withEvent event: UIEvent?) -> Bool {
+        if let signinFrame = signinButton?.frame {
+            let convertedFrame = convertRect(signinFrame, fromView: signinButton?.superview)
+            return !CGRectContainsPoint(convertedFrame, point)
+        }
+
+        return true
     }
 }
 
