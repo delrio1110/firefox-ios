@@ -168,6 +168,24 @@ public protocol BrowserLogins {
     func removeAll() -> Success
 }
 
+public protocol SyncableLogins {
+    /**
+     * Delete the login with the provided GUID. Succeeds if the GUID is unknown.
+     */
+    func deleteByGUID(guid: GUID, deletedAt: Timestamp) -> Success
+
+    /**
+     * Chains through the provided timestamp.
+     */
+    func markAsSynchronized([GUID], modified: Timestamp) -> Deferred<Result<Timestamp>>
+    func markAsDeleted(guids: [GUID]) -> Success
+
+    /**
+     * Clean up any metadata.
+     */
+    func onRemovedAccount() -> Success
+}
+
 public class LoginDataError: ErrorType {
     public let description: String
     public init(description: String) {

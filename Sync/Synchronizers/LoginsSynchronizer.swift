@@ -10,25 +10,6 @@ import XCGLogger
 private let log = XCGLogger.defaultInstance()
 private let PasswordsStorageVersion = 1
 
-// TODO: move to Logins.swift when Wes is done refactoring.
-public protocol SyncableLogins {
-    /**
-     * Delete the login with the provided GUID. Succeeds if the GUID is unknown.
-     */
-    func deleteByGUID(guid: GUID, deletedAt: Timestamp) -> Success
-
-    /**
-     * Chains through the provided timestamp.
-     */
-    func markAsSynchronized([GUID], modified: Timestamp) -> Deferred<Result<Timestamp>>
-    func markAsDeleted(guids: [GUID]) -> Success
-
-    /**
-     * Clean up any metadata.
-     */
-    func onRemovedAccount() -> Success
-}
-
 private func makeDeletedLoginRecord(guid: GUID) -> Record<LoginPayload> {
     // Local modified time is ignored in upload serialization.
     let modified: Timestamp = 0
