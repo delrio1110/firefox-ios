@@ -5,7 +5,7 @@
 import Foundation
 import Shared
 
-public class MockLogins: Logins {
+public class MockLogins: BrowserLogins {
     private var cache = [Login]()
 
     public init(files: FileAccessor) {

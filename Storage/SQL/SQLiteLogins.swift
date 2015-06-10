@@ -64,7 +64,7 @@ private class LoginsTable: Table {
 
 }
 
-public class SQLiteLogins: Logins {
+public class SQLiteLogins: BrowserLogins {
     private let table = LoginsTable()
     private let db: BrowserDB
 

@@ -158,7 +158,7 @@ public func ==(lhs: Login, rhs: Login) -> Bool {
     return lhs.credentials == rhs.credentials && lhs.protectionSpace == rhs.protectionSpace
 }
 
-public protocol Logins {
+public protocol BrowserLogins {
     func getUsageDataForLogin(login: LoginData) -> Deferred<Result<LoginUsageData>>
     func getLoginsForProtectionSpace(protectionSpace: NSURLProtectionSpace) -> Deferred<Result<Cursor<LoginData>>>
     func addLogin(login: LoginData) -> Success
