@@ -8,28 +8,65 @@ import XCGLogger
 
 private let log = XCGLogger.defaultInstance()
 
+let TableLoginsMirror = "loginsM"
+let TableLoginsLocal = "loginsL"
+
 private class LoginsTable: Table {
-    var name: String { return "logins" }
-    var version: Int { return 1 }
+    var name: String { return "LOGINS" }
+    var version: Int { return 2 }
+
+    func run(db: SQLiteDBConnection, sql: String, args: Args? = nil) -> Bool {
+        let err = db.executeChange(sql, withArgs: args)
+        if err != nil {
+            log.error("Error running SQL in LoginsTable. \(err?.localizedDescription)")
+            log.error("SQL was \(sql)")
+        }
+        return err == nil
+    }
+
+    // TODO: transaction.
+    func run(db: SQLiteDBConnection, queries: [String]) -> Bool {
+        for sql in queries {
+            if !run(db, sql: sql, args: nil) {
+                return false
+            }
+        }
+        return true
+    }
 
     func create(db: SQLiteDBConnection, version: Int) -> Bool {
         // We ignore the version.
-        let sql = "CREATE TABLE IF NOT EXISTS \(name) (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "hostname TEXT NOT NULL, " +
-            "httpRealm TEXT, " +
-            "formSubmitUrl TEXT, " +
-            "usernameField TEXT, " +
-            "passwordField TEXT, " +
-            "guid TEXT NOT NULL UNIQUE, " +
-            "timeCreated INTEGER NOT NULL, " +
-            "timeLastUsed INTEGER, " +
-            "timePasswordChanged INTEGER NOT NULL, " +
-            "username TEXT, " +
-            "password TEXT NOT NULL" +
+
+        let common =
+        "id INTEGER PRIMARY KEY AUTOINCREMENT" +
+        ", hostname TEXT NOT NULL" +
+        ", httpRealm TEXT" +
+        ", formSubmitUrl TEXT" +
+        ", usernameField TEXT" +
+        ", passwordField TEXT" +
+        ", timeCreated INTEGER NOT NULL" +
+        ", timeLastUsed INTEGER" +
+        ", timePasswordChanged INTEGER NOT NULL" +
+        ", username TEXT" +
+        ", password TEXT NOT NULL"
+
+        let mirror = "CREATE TABLE IF NOT EXISTS \(TableLoginsMirror) (" +
+            common +
+            ", guid TEXT NOT NULL UNIQUE" +
+            ", server_modified INTEGER NOT NULL" +              // Integer milliseconds.
+            ", is_overridden TINYINT NOT NULL DEFAULT = 0" +
         ")"
-        let err = db.executeChange(sql, withArgs: nil)
-        return err == nil
+
+        let local = "CREATE TABLE IF NOT EXISTS \(TableLoginsLocal) (" +
+            common +
+            ", guid TEXT UNIQUE REFERENCES \(TableLoginsMirror)(guid)" +       // Can be null if locally new.
+            ", local_modified INTEGER" +          // Can be null. Client clock. In extremis only.
+            ", is_deleted TINYINT NOT NULL" +     // Boolean. Locally deleted.
+            ", should_upload TINYINT NOT NULL" +  // Boolean. Set when changed or created.
+        ")"
+
+        return self.run(db, queries: [mirror, local])
+
     }
 
     func updateTable(db: SQLiteDBConnection, from: Int, to: Int) -> Bool {
