@@ -10,6 +10,7 @@ private let log = XCGLogger.defaultInstance()
 
 let TableLoginsMirror = "loginsM"
 let TableLoginsLocal = "loginsL"
+let AllTables: Args = [TableLoginsMirror, TableLoginsLocal]
 
 private class LoginsTable: Table {
     var name: String { return "LOGINS" }
@@ -66,7 +67,6 @@ private class LoginsTable: Table {
         ")"
 
         return self.run(db, queries: [mirror, local])
-
     }
 
     func updateTable(db: SQLiteDBConnection, from: Int, to: Int) -> Bool {
@@ -87,10 +87,7 @@ private class LoginsTable: Table {
     }
 
     func exists(db: SQLiteDBConnection) -> Bool {
-        let tablesSQL = "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?"
-        let res = db.executeQuery(tablesSQL, factory: StringFactory, withArgs: [name])
-        log.debug("\(res.count) logins tables exist.")
-        return res.count > 0
+        return db.tablesExist(AllTables)
     }
 
     func drop(db: SQLiteDBConnection) -> Bool {
